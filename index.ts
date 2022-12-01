@@ -2,8 +2,10 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 import { sign } from "jsonwebtoken";
-import { serialize } from "cookie";
-const cookieParser = require("cookie-parser");
+import cookieParser from "cookie-parser";
+import bcrypt, { compare, hash } from "bcrypt";
+
+const saltRounds = 10;
 
 const secret: any = process.env.SECRET;
 
@@ -18,29 +20,67 @@ app.post("/login", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
+
+
   const user = await prisma.user.findFirst({
     where: {
       email: email,
-      password: password,
     },
   });
 
   if(user){
-
-    const token = sign(
-      {
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
-        username: email,
-      },
-      secret
-    )
-
-    res.json({token: token})
+    const hash = user.password
+ 
+    bcrypt.compare(password, hash, function (err, result) {
+      if (result) {
+    
+        const token = sign(
+          {
+            exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
+            username: email,
+          },
+          secret
+        );
+    
+        res.json({ token: token });
+      } else {
+        res.send("Email or password are incorrect");
+      }
+    });
   }else{
-    res.send("User not found")
+    res.send(user)
   }
 
 
+
+
+
+  
+});
+
+app.post("/createUser", async (req, res) => {
+  const email = req.body.email;
+  const username = req.body.username;
+  const password = req.body.password;
+
+  bcrypt.hash(password, saltRounds, async function (err, hash) {
+    const createdUser = await prisma.user.create({
+      data: {
+        email: email,
+        username: username,
+        password: hash,
+      },
+    });
+    if (createdUser) {
+      res.json({ createdUser, message: "success" });
+    } else {
+      res.json({ message: "Failed to create" });
+    }
+  });
+});
+
+app.post("/teteV", async (req, res) => {
+  
 });
 
 app.listen(process.env.PORT, () => {
