@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
-import { sign } from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import bcrypt, { compare, hash } from "bcrypt";
 
@@ -20,20 +20,17 @@ app.post("/login", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-
-
   const user = await prisma.user.findFirst({
     where: {
       email: email,
     },
   });
 
-  if(user){
-    const hash = user.password
- 
+  if (user) {
+    const hash = user.password;
+
     bcrypt.compare(password, hash, function (err, result) {
       if (result) {
-    
         const token = sign(
           {
             exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
@@ -41,21 +38,15 @@ app.post("/login", async (req, res) => {
           },
           secret
         );
-    
+
         res.json({ token: token });
       } else {
         res.send("Email or password are incorrect");
       }
     });
-  }else{
-    res.send(user)
+  } else {
+    res.send(user);
   }
-
-
-
-
-
-  
 });
 
 app.post("/createUser", async (req, res) => {
@@ -79,8 +70,31 @@ app.post("/createUser", async (req, res) => {
   });
 });
 
-app.post("/teteV", async (req, res) => {
-  
+app.post("/getUserData", async (req, res) => {
+  const token = req.body.token;
+
+  const verified: any = verify(token, secret);
+
+  const email = verified.username;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      email: email,
+    },
+    include: {
+      posts: true,
+    },
+  });
+
+  const AllUserData = await prisma.user.findMany({
+    include:{
+      posts:true,
+    }
+  })
+
+  console.log(user);
+
+  res.json({userData: user, allUserData: AllUserData});
 });
 
 app.listen(process.env.PORT, () => {

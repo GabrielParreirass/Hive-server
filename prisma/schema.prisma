@@ -32,4 +32,5 @@ model User {
   username String
   password String
   posts    Post[]
+  friends  Json[]
 }
