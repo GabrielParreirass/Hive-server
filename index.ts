@@ -54,20 +54,39 @@ app.post("/createUser", async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  bcrypt.hash(password, saltRounds, async function (err, hash) {
-    const createdUser = await prisma.user.create({
-      data: {
-        email: email,
-        username: username,
-        password: hash,
-      },
-    });
-    if (createdUser) {
-      res.json({ createdUser, message: "success" });
-    } else {
-      res.json({ message: "Failed to create" });
-    }
+  const emailUser = await prisma.user.findFirst({
+    where: {
+      email: email,
+    },
   });
+
+  const nameUser = await prisma.user.findFirst({
+    where: {
+      username: username,
+    },
+  });
+
+  if (emailUser) {
+    res.json({ message: "Email já cadastrado em conta existente!", create: false });
+  }else if(nameUser){
+    res.json({ message: "Usuario já existe!", create:false });
+  } else {
+    bcrypt.hash(password, saltRounds, async function (err, hash) {
+      const createdUser = await prisma.user.create({
+        data: {
+          email: email,
+          username: username,
+          password: hash,
+          friends: [],
+        },
+      });
+      if (createdUser) {
+        res.json({ createdUser, message: "Conta criada com sucesso", create:true });
+      } else {
+        res.json({ message: "Failed to create" });
+      }
+    });
+  }
 });
 
 app.post("/getUserData", async (req, res) => {
@@ -87,14 +106,38 @@ app.post("/getUserData", async (req, res) => {
   });
 
   const AllUserData = await prisma.user.findMany({
-    include:{
-      posts:true,
-    }
-  })
+    include: {
+      posts: true,
+    },
+  });
 
   console.log(user);
 
-  res.json({userData: user, allUserData: AllUserData});
+  res.json({ userData: user, allUserData: AllUserData });
+});
+
+app.get("/getUser/:id", async (req, res) => {
+  const authorId = req.params.id;
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: authorId,
+      },
+      include: {
+        posts: true,
+      },
+    });
+    res.json({ message: user });
+  } catch (error) {
+    res.json({ message: "Usuario não encontrado!" });
+  }
+});
+
+app.get("/getUsers", async (req, res) => {
+  const users = await prisma.user.findMany({});
+
+  res.json({ users });
 });
 
 app.listen(process.env.PORT, () => {
