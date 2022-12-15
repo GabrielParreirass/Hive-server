@@ -67,9 +67,12 @@ app.post("/createUser", async (req, res) => {
   });
 
   if (emailUser) {
-    res.json({ message: "Email já cadastrado em conta existente!", create: false });
-  }else if(nameUser){
-    res.json({ message: "Usuario já existe!", create:false });
+    res.json({
+      message: "Email já cadastrado em conta existente!",
+      create: false,
+    });
+  } else if (nameUser) {
+    res.json({ message: "Usuario já existe!", create: false });
   } else {
     bcrypt.hash(password, saltRounds, async function (err, hash) {
       const createdUser = await prisma.user.create({
@@ -81,7 +84,11 @@ app.post("/createUser", async (req, res) => {
         },
       });
       if (createdUser) {
-        res.json({ createdUser, message: "Conta criada com sucesso", create:true });
+        res.json({
+          createdUser,
+          message: "Conta criada com sucesso",
+          create: true,
+        });
       } else {
         res.json({ message: "Failed to create" });
       }
@@ -138,6 +145,23 @@ app.get("/getUsers", async (req, res) => {
   const users = await prisma.user.findMany({});
 
   res.json({ users });
+});
+
+app.post("/createPost", async (req, res) => {
+  const title = req.body.title;
+  const body = req.body.body;
+  const authorId = req.body.authorId
+
+  const createdPost = await prisma.post.create({
+    data:{
+      title: title,
+      body: body,
+      authorId: authorId,
+    }
+  })
+
+
+  res.json({post: createdPost});
 });
 
 app.listen(process.env.PORT, () => {
