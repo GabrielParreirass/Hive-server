@@ -112,13 +112,13 @@ app.post("/getUserData", async (req, res) => {
     },
   });
 
-  const AllUserData = await prisma.user.findMany({
+  const fetchUsersData = await prisma.user.findMany({
     include: {
       posts: true,
     },
   });
 
-  console.log(user);
+  const AllUserData = fetchUsersData.reverse();
 
   res.json({ userData: user, allUserData: AllUserData });
 });
