@@ -112,15 +112,20 @@ app.post("/getUserData", async (req, res) => {
     },
   });
 
-  const fetchUsersData = await prisma.user.findMany({
+  const AllUserData = await prisma.user.findMany({
     include: {
-      posts: true,
+      posts: true ,
     },
+    orderBy:{
+      id:'desc'
+    }
   });
 
-  const AllUserData = fetchUsersData.reverse();
 
-  res.json({ userData: user, allUserData: AllUserData });
+  const comments = await prisma.comment.findMany({})
+
+
+  res.json({ userData: user, allUserData: AllUserData, comments: comments});
 });
 
 app.get("/getUser/:id", async (req, res) => {
@@ -150,19 +155,68 @@ app.get("/getUsers", async (req, res) => {
 app.post("/createPost", async (req, res) => {
   const title = req.body.title;
   const body = req.body.body;
-  const authorId = req.body.authorId
+  const authorId = req.body.authorId;
 
   const createdPost = await prisma.post.create({
-    data:{
+    data: {
       title: title,
       body: body,
       authorId: authorId,
+    },
+  });
+
+  res.json({ post: createdPost });
+});
+
+app.patch('/sendComment', async (req, res) =>{
+  const authorId = req.body.authorId;
+  const authorUsername = req.body.authorUsername;
+  const commentText = req.body.comment;
+  const postId = req.body.postId;
+
+  const commentSend = await prisma.post.update({
+    where:{
+      id:postId
+    },
+    data:{
+      Comment:{
+        createMany:{
+          data:[
+            {
+              comment:commentText,
+              authorId: authorId,
+              authorUsername:authorUsername
+            }
+          ]
+        }
+      }
     }
   })
 
+  res.send(commentSend)
 
-  res.json({post: createdPost});
-});
+
+})
+
+app.delete('/deletePost', async (req, res) => {
+  const postId = req.body.postId;
+
+
+  await prisma.comment.deleteMany({
+    where:{
+      postId: postId
+    }
+  })
+
+  const deletedPost = await prisma.post.delete({
+    where:{
+      id: postId,
+    }
+  })
+
+  res.send(deletedPost)
+
+})
 
 app.listen(process.env.PORT, () => {
   console.log("Server loaded on port:", process.env.PORT);
