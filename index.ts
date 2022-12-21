@@ -124,8 +124,15 @@ app.post("/getUserData", async (req, res) => {
 
   const comments = await prisma.comment.findMany({})
 
+  const posts = await prisma.post.findMany({
+    orderBy:{
+      id:'desc'
+    }
+  })
 
-  res.json({ userData: user, allUserData: AllUserData, comments: comments});
+  console.log(posts)
+
+  res.json({ userData: user, allUserData: AllUserData, comments: comments, posts:posts});
 });
 
 app.get("/getUser/:id", async (req, res) => {
@@ -156,12 +163,14 @@ app.post("/createPost", async (req, res) => {
   const title = req.body.title;
   const body = req.body.body;
   const authorId = req.body.authorId;
+  const authorUsername = req.body.authorUsername;
 
   const createdPost = await prisma.post.create({
     data: {
       title: title,
       body: body,
       authorId: authorId,
+      authorUsername: authorUsername
     },
   });
 
