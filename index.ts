@@ -114,25 +114,29 @@ app.post("/getUserData", async (req, res) => {
 
   const AllUserData = await prisma.user.findMany({
     include: {
-      posts: true ,
+      posts: true,
     },
-    orderBy:{
-      id:'desc'
-    }
+    orderBy: {
+      id: "desc",
+    },
   });
 
-
-  const comments = await prisma.comment.findMany({})
+  const comments = await prisma.comment.findMany({});
 
   const posts = await prisma.post.findMany({
-    orderBy:{
-      id:'desc'
-    }
-  })
+    orderBy: {
+      id: "desc",
+    },
+  });
 
-  console.log(posts)
+  console.log(posts);
 
-  res.json({ userData: user, allUserData: AllUserData, comments: comments, posts:posts});
+  res.json({
+    userData: user,
+    allUserData: AllUserData,
+    comments: comments,
+    posts: posts,
+  });
 });
 
 app.get("/getUser/:id", async (req, res) => {
@@ -170,62 +174,80 @@ app.post("/createPost", async (req, res) => {
       title: title,
       body: body,
       authorId: authorId,
-      authorUsername: authorUsername
+      authorUsername: authorUsername,
     },
   });
 
   res.json({ post: createdPost });
 });
 
-app.patch('/sendComment', async (req, res) =>{
+app.patch("/sendComment", async (req, res) => {
   const authorId = req.body.authorId;
   const authorUsername = req.body.authorUsername;
   const commentText = req.body.comment;
   const postId = req.body.postId;
 
   const commentSend = await prisma.post.update({
-    where:{
-      id:postId
+    where: {
+      id: postId,
     },
-    data:{
-      Comment:{
-        createMany:{
-          data:[
+    data: {
+      Comment: {
+        createMany: {
+          data: [
             {
-              comment:commentText,
+              comment: commentText,
               authorId: authorId,
-              authorUsername:authorUsername
-            }
-          ]
-        }
-      }
-    }
-  })
+              authorUsername: authorUsername,
+            },
+          ],
+        },
+      },
+    },
+  });
 
-  res.send(commentSend)
+  res.send(commentSend);
+});
 
-
-})
-
-app.delete('/deletePost', async (req, res) => {
+app.delete("/deletePost", async (req, res) => {
   const postId = req.body.postId;
 
-
   await prisma.comment.deleteMany({
-    where:{
-      postId: postId
-    }
-  })
+    where: {
+      postId: postId,
+    },
+  });
 
   const deletedPost = await prisma.post.delete({
-    where:{
+    where: {
       id: postId,
-    }
-  })
+    },
+  });
 
-  res.send(deletedPost)
+  res.send(deletedPost);
+});
 
-})
+app.post("/addFriend", async (req, res) => {
+  const friendId = req.body.friendId;
+  const friendUsername = req.body.friendUsername;
+  const loggedUserId = req.body.loggedUserId;
+
+  await prisma.user.update({
+    where: {
+      id: loggedUserId,
+    },
+    data: {
+      friends: {
+        push: {
+          id: friendId,
+          username: friendUsername,
+        },
+      },
+    },
+  });
+
+  res.send("Adicionado com sucesso!");
+});
 
 app.listen(process.env.PORT, () => {
   console.log("Server loaded on port:", process.env.PORT);
