@@ -239,14 +239,45 @@ app.post("/addFriend", async (req, res) => {
     data: {
       friends: {
         push: {
-          id: friendId,
-          username: friendUsername,
+          friendId: friendId,
+          friendUsername: friendUsername,
         },
       },
     },
   });
 
   res.send("Adicionado com sucesso!");
+});
+
+app.post("/removeFriend", async (req, res) => {
+  const IdFriendToBeRemoved = req.body.toBeRemovedId;
+  const logedUserId = req.body.loggedUserId;
+
+  const friendsList = await prisma.user.findFirst({
+    where: { id: logedUserId },
+  });
+
+  const indexFriendToBeRemoved: any = friendsList?.friends.findIndex(
+    (friend: any) => friend.friendId == IdFriendToBeRemoved
+  );
+
+  friendsList?.friends.splice(indexFriendToBeRemoved, 1);
+
+  const nova = friendsList?.friends;
+
+  await prisma.user.update({
+    where: {
+      id:logedUserId
+    },
+    data:{
+      friends:{
+        set: nova
+      }
+    }
+  })
+
+  res.json({ newList: nova });
+
 });
 
 app.listen(process.env.PORT, () => {

@@ -37,3 +37,4 @@ model User {
   posts    Post[]
   friends  Json[]
 }
+
