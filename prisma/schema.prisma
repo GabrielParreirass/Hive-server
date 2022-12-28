@@ -18,6 +18,7 @@ model Post {
   authorId String    @db.ObjectId
   authorUsername String
   Comment  Comment[]
+  likes Json[]
 }
 
 model Comment {

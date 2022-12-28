@@ -267,18 +267,77 @@ app.post("/removeFriend", async (req, res) => {
 
   await prisma.user.update({
     where: {
-      id:logedUserId
+      id: logedUserId,
     },
-    data:{
-      friends:{
-        set: nova
+    data: {
+      friends: {
+        set: nova,
+      },
+    },
+  });
+
+  res.json({ newList: nova });
+});
+
+app.post("/addLike", async (req, res) => {
+  const postId = req.body.postId;
+  const likeAuthorId = req.body.likeAuthorId;
+  const likeAuthorUsername = req.body.likeAuthorUsername;
+
+  const liked = await prisma.post.update({
+    where: {
+      id: postId
+    },
+    data: {
+      likes:{
+        push:{
+          likeAuthorId: likeAuthorId,
+          likeAuthorUsername: likeAuthorUsername
+        }
       }
     }
   })
 
-  res.json({ newList: nova });
+  res.send(liked)
 
 });
+
+app.patch("/removeLike", async (req, res) => {
+  const postId = req.body.postId;
+  const likeAuthorId = req.body.likeAuthorId
+
+  const likesList = await prisma.post.findFirst({
+    where: {
+      id:postId
+    }
+  })
+
+  const indexLikeToBeRemoved: any = likesList?.likes.findIndex(
+    (like: any) => like.likeAuthorId == likeAuthorId
+  );
+
+  likesList?.likes.splice(indexLikeToBeRemoved, 1)
+
+  const newLikesList = likesList!.likes
+
+
+
+  await prisma.post.update({
+    where:{
+      id: postId
+    },
+    data:{
+      likes:{
+        set: newLikesList
+      }
+    }
+  })
+
+  res.json({likes: newLikesList})
+
+  
+
+})
 
 app.listen(process.env.PORT, () => {
   console.log("Server loaded on port:", process.env.PORT);
